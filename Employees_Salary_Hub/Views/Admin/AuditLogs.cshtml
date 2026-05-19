@@ -1,0 +1,186 @@
+﻿@model IEnumerable<AuditLog>
+@{
+    ViewData["Title"] = "Audit Logs";
+    int page = ViewBag.Page ?? 1;
+}
+
+<div class="audit-wrapper">
+
+    <div class="page-header">
+        <div>
+            <h1>Audit Logs</h1>
+            <p class="subtitle">Full activity history — showing up to 50 entries per page.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline">← Dashboard</a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="🔍  Search by action or user…"
+               class="search-input" onkeyup="filterLogs()" />
+        <select id="actionFilter" class="filter-select" onchange="filterLogs()">
+            <option value="">All Actions</option>
+            <option value="SLIP_DOWNLOADED">Slip Downloads</option>
+            <option value="PAYROLL_UPLOADED">Payroll Uploads</option>
+            <option value="BATCH_PUBLISHED">Batch Published</option>
+        </select>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="auditTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int i = 1; }
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@i++</td>
+                                <td>
+                                    <span class="timestamp">@log.Timestamp.ToString("dd MMM yyyy")</span>
+                                    <span class="time-part">@log.Timestamp.ToString("HH:mm:ss")</span>
+                                </td>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="avatar-xs">
+                                            @{
+                                                var name = log.User?.FullName ?? "?";
+                                                var initials = string.Concat(name.Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0]));
+                                            }
+                                            @initials
+                                        </div>
+                                        <div>
+                                            <span class="user-name">@(log.User?.FullName ?? "Unknown")</span>
+                                            <span class="user-code">@(log.User?.EmployeeCode ?? log.UserId)</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @{
+                                        var actionClass = log.Action.Contains("DOWNLOAD") ? "action-blue"
+                                            : log.Action.Contains("UPLOAD") ? "action-green"
+                                            : log.Action.Contains("PUBLISH") ? "action-purple"
+                                            : "action-gray";
+                                    }
+                                    <code class="action-tag @actionClass">@log.Action</code>
+                                </td>
+                                <td class="text-muted">@(log.IPAddress ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            @if (page > 1)
+            {
+                <a asp-action="AuditLogs" asp-route-page="@(page - 1)" class="page-btn">← Prev</a>
+            }
+            <span class="page-info">Page @@page</span>
+            @if (Model.Count() == 50)
+            {
+                <a asp-action="AuditLogs" asp-route-page="@(page + 1)" class="page-btn">Next →</a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3>No Audit Logs Yet</h3>
+            <p>System activity will appear here as users interact with the platform.</p>
+        </div>
+    }
+</div>
+
+<script>
+    function filterLogs() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const action = document.getElementById('actionFilter').value.toLowerCase();
+        const rows = document.querySelectorAll('#auditTable tbody tr');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const matchSearch = text.includes(search);
+            const matchAction = !action || text.includes(action);
+            row.style.display = matchSearch && matchAction ? '' : 'none';
+        });
+    }
+</script>
+
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6fb; color: #333; }
+
+    .audit-wrapper { max-width: 1150px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.8rem; }
+    .page-header h1 { font-size: 1.6rem; font-weight: 700; }
+    .subtitle { color: #666; font-size: 0.9rem; margin-top: 0.3rem; }
+
+    .filter-bar { display: flex; gap: 1rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+    .search-input {
+        flex: 1; min-width: 240px; max-width: 400px;
+        padding: 0.65rem 1rem; border: 1.5px solid #dde3f0;
+        border-radius: 8px; font-size: 0.92rem; outline: none;
+    }
+    .search-input:focus { border-color: #1a73e8; }
+    .filter-select {
+        padding: 0.65rem 1rem; border: 1.5px solid #dde3f0;
+        border-radius: 8px; font-size: 0.92rem; outline: none; background: white;
+    }
+    .filter-select:focus { border-color: #1a73e8; }
+
+    .card { background: white; border-radius: 12px; padding: 1.6rem; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .table-wrapper { overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .data-table th { background: #f0f4ff; padding: 0.7rem 1rem; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #dde3f0; }
+    .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #fafbff; }
+
+    .timestamp { font-weight: 600; color: #333; display: block; }
+    .time-part { font-size: 0.78rem; color: #aaa; }
+    .text-muted { color: #999; font-size: 0.82rem; }
+
+    .user-cell { display: flex; align-items: center; gap: 0.65rem; }
+    .avatar-xs {
+        width: 28px; height: 28px; border-radius: 50%;
+        background: linear-gradient(135deg, #1a73e8, #0d47a1);
+        color: white; font-size: 0.65rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .user-name { display: block; font-weight: 600; font-size: 0.88rem; }
+    .user-code { display: block; font-size: 0.75rem; color: #aaa; }
+
+    .action-tag { padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.78rem; font-weight: 600; font-family: monospace; }
+    .action-blue   { background: #e3f2fd; color: #1565c0; }
+    .action-green  { background: #e8f5e9; color: #2e7d32; }
+    .action-purple { background: #f3e5f5; color: #6a1b9a; }
+    .action-gray   { background: #f5f5f5; color: #555; }
+
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .page-btn { padding: 0.5rem 1.1rem; border: 1.5px solid #dde3f0; border-radius: 6px; text-decoration: none; color: #1a73e8; font-size: 0.9rem; background: white; }
+    .page-btn:hover { background: #1a73e8; color: white; border-color: #1a73e8; }
+    .page-info { font-size: 0.88rem; color: #888; }
+
+    .btn { display: inline-block; padding: 0.5rem 1.1rem; border-radius: 6px; font-size: 0.9rem; text-decoration: none; cursor: pointer; border: none; transition: 0.2s; font-weight: 500; }
+    .btn-outline { border: 2px solid #1a73e8; color: #1a73e8; background: transparent; }
+    .btn-outline:hover { background: #1a73e8; color: white; }
+
+    .empty-state { background: white; border-radius: 14px; padding: 4rem 2rem; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .empty-state p { color: #666; font-size: 0.9rem; }
+</style>

@@ -1,0 +1,345 @@
+﻿@model IEnumerable<SalarySlip>
+@{
+    ViewData["Title"] = "My Salary Slips";
+}
+
+<div class="slip-wrapper">
+
+    <div class="page-header">
+        <div>
+            <h1>My Salary Slips</h1>
+            <p class="subtitle">Download your monthly salary slips below.</p>
+        </div>
+        <a asp-controller="Employee" asp-action="Index" class="btn btn-outline">← Dashboard</a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">⚠️ @TempData["Error"]</div>
+    }
+
+    @if (Model != null && Model.Any())
+    {
+        <!-- Summary Bar -->
+        <div class="summary-bar">
+            <div class="summary-item">
+                <span class="summary-label">Total Slips</span>
+                <span class="summary-value">@Model.Count()</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Latest Month</span>
+                <span class="summary-value">@Model.First().Month / @Model.First().Year</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Latest Net Salary</span>
+                <span class="summary-value">₹@Model.First().NetSalary.ToString("N2")</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Total Earned</span>
+                <span class="summary-value">₹@Model.Sum(s => s.NetSalary).ToString("N2")</span>
+            </div>
+        </div>
+
+        <!-- Slips Table -->
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Period</th>
+                            <th>Basic Salary</th>
+                            <th>Allowances</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                            <th>Download</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int i = 1;
+                        }
+                        @foreach (var slip in Model)
+                        {
+                            var isReleased = slip.PayrollBatch != null
+                                && slip.PayrollBatch.IsPublished
+                                && slip.PayrollBatch.ReleaseDate <= DateTime.UtcNow;
+
+                            <tr>
+                                <td class="row-num">@i++</td>
+                                <td>
+                                    <span class="period">@slip.Month / @slip.Year</span>
+                                </td>
+                                <td>₹@slip.BasicSalary.ToString("N2")</td>
+                                <td class="text-green">+₹@slip.TotalAllowances.ToString("N2")</td>
+                                <td class="text-red">-₹@slip.TotalDeductions.ToString("N2")</td>
+                                <td><strong>₹@slip.NetSalary.ToString("N2")</strong></td>
+                                <td>
+                                    @if (isReleased)
+                                    {
+                                        <span class="badge badge-green">Released</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-gray">Pending</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (isReleased && !string.IsNullOrEmpty(slip.PdfPath))
+                                    {
+                                        <a asp-controller="SalarySlip"
+                                           asp-action="Download"
+                                           asp-route-id="@slip.Id"
+                                           class="btn btn-sm btn-primary"
+                                           title="Download PDF">
+                                            ⬇ Download
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="btn btn-sm btn-disabled" title="Not available yet">Unavailable</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📄</div>
+            <h3>No Salary Slips Yet</h3>
+            <p>Your salary slips will appear here once they are generated and released by your admin.</p>
+            <a asp-controller="Employee" asp-action="Index" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+    }
+
+</div>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #f4f6fb;
+        color: #333;
+    }
+
+    .slip-wrapper {
+        max-width: 1100px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+    .subtitle {
+        color: #666;
+        font-size: 0.92rem;
+        margin-top: 0.3rem;
+    }
+
+    .alert {
+        border-radius: 8px;
+        padding: 0.85rem 1.2rem;
+        font-size: 0.9rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .alert-danger {
+        background: #fce4ec;
+        color: #c62828;
+    }
+
+    .summary-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.8rem;
+    }
+
+    .summary-item {
+        background: white;
+        border-radius: 10px;
+        padding: 1.2rem 1.4rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .summary-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #888;
+        font-weight: 600;
+    }
+
+    .summary-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #1a73e8;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.6rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+        .data-table th {
+            background: #f0f4ff;
+            color: #444;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 2px solid #dde3f0;
+        }
+
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: #fafbff;
+        }
+
+    .row-num {
+        color: #aaa;
+        font-size: 0.82rem;
+    }
+
+    .period {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .text-green {
+        color: #2e7d32;
+    }
+
+    .text-red {
+        color: #c62828;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .badge-green {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .badge-gray {
+        background: #f5f5f5;
+        color: #757575;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 0.5rem 1.2rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: 0.2s;
+    }
+
+    .btn-outline {
+        border: 2px solid #1a73e8;
+        color: #1a73e8;
+        background: transparent;
+    }
+
+        .btn-outline:hover {
+            background: #1a73e8;
+            color: white;
+        }
+
+    .btn-primary {
+        background: #1a73e8;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #1558c0;
+        }
+
+    .btn-sm {
+        padding: 0.35rem 0.85rem;
+        font-size: 0.82rem;
+    }
+
+    .btn-disabled {
+        background: #f0f0f0;
+        color: #aaa;
+        cursor: not-allowed;
+    }
+
+    .empty-state {
+        background: white;
+        border-radius: 14px;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .empty-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #666;
+        font-size: 0.92rem;
+        margin-bottom: 1.5rem;
+    }
+</style>

@@ -1,0 +1,672 @@
+﻿@model Employees_Salary_Hub.ViewModels.Admin.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard — Salary Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --bg: #0a0c10;
+                --surface: #12151c;
+                --surface2: #1a1e28;
+                --border: #232736;
+                --accent: #00e5a0;
+                --accent-dim: rgba(0,229,160,0.12);
+                --accent-glow: rgba(0,229,160,0.2);
+                --text: #e2e8f0;
+                --muted: #64748b;
+                --danger: #f43f5e;
+                --warning: #f59e0b;
+                --info: #38bdf8;
+            }
+
+            body {
+                font-family: 'Syne', sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                min-height: 100vh;
+                background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(0,229,160,0.06) 0%, transparent 60%);
+            }
+
+            /* ── Sidebar ───────────────────────────────────────────── */
+            .layout {
+                display: flex;
+                min-height: 100vh;
+            }
+
+            .sidebar {
+                width: 240px;
+                background: var(--surface);
+                border-right: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                padding: 28px 0;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                z-index: 10;
+            }
+
+            .sidebar-logo {
+                padding: 0 24px 28px;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 20px;
+            }
+
+            .logo-mark {
+                font-size: 20px;
+                font-weight: 800;
+                letter-spacing: -0.5px;
+            }
+
+                .logo-mark span {
+                    color: var(--accent);
+                }
+
+            .logo-sub {
+                font-size: 11px;
+                color: var(--muted);
+                font-family: 'DM Mono', monospace;
+                margin-top: 2px;
+            }
+
+            .nav-section {
+                padding: 0 12px;
+                margin-bottom: 8px;
+            }
+
+            .nav-label {
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 0 12px;
+                margin-bottom: 6px;
+                font-family: 'DM Mono', monospace;
+            }
+
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 12px;
+                border-radius: 8px;
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 14px;
+                font-weight: 600;
+                transition: all 0.15s;
+                margin-bottom: 2px;
+            }
+
+                .nav-item:hover {
+                    background: var(--surface2);
+                    color: var(--text);
+                }
+
+                .nav-item.active {
+                    background: var(--accent-dim);
+                    color: var(--accent);
+                }
+
+            .nav-icon {
+                font-size: 16px;
+                width: 20px;
+                text-align: center;
+            }
+
+            .sidebar-footer {
+                margin-top: auto;
+                padding: 20px 12px 0;
+                border-top: 1px solid var(--border);
+            }
+
+            /* ── Main ──────────────────────────────────────────────── */
+            .main {
+                margin-left: 240px;
+                flex: 1;
+                padding: 36px 40px;
+            }
+
+            .page-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                margin-bottom: 36px;
+            }
+
+            .page-title {
+                font-size: 28px;
+                font-weight: 800;
+                letter-spacing: -0.5px;
+            }
+
+            .page-subtitle {
+                color: var(--muted);
+                font-size: 14px;
+                margin-top: 4px;
+                font-family: 'DM Mono', monospace;
+            }
+
+            .header-time {
+                font-family: 'DM Mono', monospace;
+                font-size: 13px;
+                color: var(--muted);
+                text-align: right;
+            }
+
+            /* ── Stat Cards ────────────────────────────────────────── */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+                margin-bottom: 32px;
+            }
+
+            .stat-card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 24px;
+                position: relative;
+                overflow: hidden;
+                animation: fadeUp 0.4s ease both;
+            }
+
+                .stat-card:nth-child(1) {
+                    animation-delay: 0.05s;
+                }
+
+                .stat-card:nth-child(2) {
+                    animation-delay: 0.10s;
+                }
+
+                .stat-card:nth-child(3) {
+                    animation-delay: 0.15s;
+                }
+
+            @@keyframes fadeUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(16px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .stat-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+            }
+
+            .stat-card.green::before {
+                background: var(--accent);
+            }
+
+            .stat-card.blue::before {
+                background: var(--info);
+            }
+
+            .stat-card.yellow::before {
+                background: var(--warning);
+            }
+
+            .stat-icon {
+                font-size: 28px;
+                margin-bottom: 16px;
+            }
+
+            .stat-value {
+                font-size: 36px;
+                font-weight: 800;
+                letter-spacing: -1px;
+                line-height: 1;
+                margin-bottom: 6px;
+            }
+
+            .stat-card.green .stat-value {
+                color: var(--accent);
+            }
+
+            .stat-card.blue .stat-value {
+                color: var(--info);
+            }
+
+            .stat-card.yellow .stat-value {
+                color: var(--warning);
+            }
+
+            .stat-label {
+                font-size: 13px;
+                color: var(--muted);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            /* ── Quick Actions ─────────────────────────────────────── */
+            .section-title {
+                font-size: 16px;
+                font-weight: 700;
+                margin-bottom: 14px;
+                color: var(--text);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+                .section-title::after {
+                    content: '';
+                    flex: 1;
+                    height: 1px;
+                    background: var(--border);
+                }
+
+            .actions-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                margin-bottom: 32px;
+            }
+
+            .action-btn {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 18px 16px;
+                text-align: center;
+                text-decoration: none;
+                color: var(--text);
+                font-size: 13px;
+                font-weight: 600;
+                transition: all 0.15s;
+                animation: fadeUp 0.4s ease both;
+                cursor: pointer;
+                display: block;
+            }
+
+                .action-btn:nth-child(1) {
+                    animation-delay: 0.2s;
+                }
+
+                .action-btn:nth-child(2) {
+                    animation-delay: 0.25s;
+                }
+
+                .action-btn:nth-child(3) {
+                    animation-delay: 0.3s;
+                }
+
+                .action-btn:nth-child(4) {
+                    animation-delay: 0.35s;
+                }
+
+                .action-btn:hover {
+                    border-color: var(--accent);
+                    background: var(--accent-dim);
+                    color: var(--accent);
+                    transform: translateY(-2px);
+                }
+
+            .action-icon {
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+
+            /* ── Tables ────────────────────────────────────────────── */
+            .two-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+
+            .table-card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                overflow: hidden;
+                animation: fadeUp 0.4s ease 0.4s both;
+            }
+
+            .table-header {
+                padding: 18px 20px;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .table-title {
+                font-size: 14px;
+                font-weight: 700;
+            }
+
+            .view-all {
+                font-size: 12px;
+                color: var(--accent);
+                text-decoration: none;
+                font-family: 'DM Mono', monospace;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th {
+                padding: 10px 20px;
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                text-align: left;
+                background: var(--surface2);
+                font-family: 'DM Mono', monospace;
+            }
+
+            td {
+                padding: 12px 20px;
+                font-size: 13px;
+                border-top: 1px solid var(--border);
+            }
+
+            tr:hover td {
+                background: var(--surface2);
+            }
+
+            .badge {
+                display: inline-block;
+                padding: 3px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+                font-family: 'DM Mono', monospace;
+            }
+
+            .badge-green {
+                background: rgba(0,229,160,0.12);
+                color: var(--accent);
+            }
+
+            .badge-yellow {
+                background: rgba(245,158,11,0.12);
+                color: var(--warning);
+            }
+
+            .badge-red {
+                background: rgba(244,63,94,0.12);
+                color: var(--danger);
+            }
+
+            .badge-blue {
+                background: rgba(56,189,248,0.12);
+                color: var(--info);
+            }
+
+            .empty-row td {
+                text-align: center;
+                color: var(--muted);
+                padding: 32px;
+                font-family: 'DM Mono', monospace;
+                font-size: 12px;
+            }
+
+            /* ── Logout form ───────────────────────────────────────── */
+            .logout-btn {
+                width: 100%;
+                background: none;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 10px 12px;
+                color: var(--muted);
+                font-family: 'Syne', sans-serif;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                text-align: left;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.15s;
+            }
+
+                .logout-btn:hover {
+                    border-color: var(--danger);
+                    color: var(--danger);
+                }
+    </style>
+</head>
+<body>
+    <div class="layout">
+
+        <!-- ── Sidebar ──────────────────────────────────────────────── -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-mark">Salary<span>Hub</span></div>
+                <div class="logo-sub">ADMIN PANEL</div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">Main</div>
+                <a href="/admin" class="nav-item active">
+                    <span class="nav-icon">⬛</span> Dashboard
+                </a>
+                <a href="/admin/employees" class="nav-item">
+                    <span class="nav-icon">👥</span> Employees
+                </a>
+                <a href="/admin/batches" class="nav-item">
+                    <span class="nav-icon">📦</span> Payroll Batches
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">System</div>
+                <a href="/admin/audit-logs" class="nav-item">
+                    <span class="nav-icon">📋</span> Audit Logs
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <form asp-controller="Auth" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="logout-btn">
+                        <span>🚪</span> Sign Out
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- ── Main Content ─────────────────────────────────────────── -->
+        <main class="main">
+
+            <!-- Header -->
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Dashboard</div>
+                    <div class="page-subtitle">@DateTime.Now.ToString("dddd, MMMM dd yyyy")</div>
+                </div>
+                <div class="header-time" id="clock"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card green">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value">@Model.TotalEmployees</div>
+                    <div class="stat-label">Total Employees</div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-value">@Model.TotalBatches</div>
+                    <div class="stat-label">Payroll Batches</div>
+                </div>
+                <div class="stat-card yellow">
+                    <div class="stat-icon">🧾</div>
+                    <div class="stat-value">@Model.TotalSlips</div>
+                    <div class="stat-label">Salary Slips</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="section-title">Quick Actions</div>
+            <div class="actions-grid">
+                <a href="/admin/employees" class="action-btn">
+                    <div class="action-icon">👥</div>
+                    Manage Employees
+                </a>
+                <a href="/admin/batches" class="action-btn">
+                    <div class="action-icon">📤</div>
+                    Upload Payroll
+                </a>
+                <a href="/admin/batches" class="action-btn">
+                    <div class="action-icon">📦</div>
+                    View Batches
+                </a>
+                <a href="/admin/audit-logs" class="action-btn">
+                    <div class="action-icon">📋</div>
+                    Audit Logs
+                </a>
+            </div>
+
+            <!-- Tables -->
+            <div class="two-col">
+
+                <!-- Recent Batches -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <div class="table-title">Recent Batches</div>
+                        <a href="/admin/batches" class="view-all">View all →</a>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Slips</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentBatches.Any())
+                            {
+                                @foreach (var batch in Model.RecentBatches)
+                                {
+                                    <tr>
+                                        <td>
+                                            @System.Globalization.CultureInfo.CurrentCulture
+                                            .DateTimeFormat.GetMonthName(batch.Month)
+                                            @batch.Year
+                                        </td>
+                                        <td>@batch.SalarySlips?.Count ?? 0</td>
+                                        <td>
+                                            @if (batch.IsPublished)
+                                            {
+                                                <span class="badge badge-green">Published</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-yellow">Draft</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr class="empty-row">
+                                    <td colspan="3">No batches yet</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Recent Audit Logs -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <div class="table-title">Recent Activity</div>
+                        <a href="/admin/audit-logs" class="view-all">View all →</a>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>User</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentAuditLogs.Any())
+                            {
+                                @foreach (var log in Model.RecentAuditLogs)
+                                {
+                                    <tr>
+                                        <td>
+                                            @{
+                                                var badgeClass = log.Action switch
+                                                {
+                                                    "LOGIN_SUCCESS" => "badge-green",
+                                                    "LOGIN_FAILED" => "badge-red",
+                                                    "OTP_SENT" => "badge-blue",
+                                                    "LOGOUT" => "badge-yellow",
+                                                    _ => "badge-blue"
+                                                };
+                                            }
+                                            <span class="badge @badgeClass">@log.Action</span>
+                                        </td>
+                                        <td style="font-family:'DM Mono',monospace;font-size:12px;">
+                                            @(log.User?.EmployeeCode ?? "—")
+                                        </td>
+                                        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);">
+                                            @log.Timestamp.ToString("HH:mm dd/MM")
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr class="empty-row">
+                                    <td colspan="3">No activity yet</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+            // Live clock
+            function updateClock() {
+                const now = new Date();
+                document.getElementById('clock').innerHTML =
+                    now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) +
+                    '<br><span style="font-size:11px">IST</span>';
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

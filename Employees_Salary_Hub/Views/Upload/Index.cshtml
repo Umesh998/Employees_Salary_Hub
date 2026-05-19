@@ -1,0 +1,541 @@
+﻿@{
+    ViewData["Title"] = "Upload Payroll";
+}
+
+<div class="upload-wrapper">
+
+    <div class="page-header">
+        <div>
+            <h1>Upload Payroll</h1>
+            <p class="subtitle">Upload an Excel file to process salary slips for a given month.</p>
+        </div>
+        <a asp-controller="Admin" asp-action="Index" class="btn btn-outline">← Back to Dashboard</a>
+    </div>
+
+    <!-- Success Message -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">✅ @TempData["Success"]</div>
+    }
+
+    <!-- Parse Errors -->
+    @if (ViewBag.Errors != null)
+    {
+        <div class="alert alert-danger">
+            <strong>⚠️ The following errors were found in the uploaded file:</strong>
+            <ul class="error-list">
+                @foreach (var err in ViewBag.Errors)
+                {
+                    <li>@err</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <!-- Model Validation Errors -->
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <div asp-validation-summary="All"></div>
+        </div>
+    }
+
+    <div class="content-grid">
+
+        <!-- Upload Form -->
+        <div class="card form-card">
+            <h2 class="card-title">📂 Payroll Details</h2>
+
+            <form asp-action="Upload" method="post" enctype="multipart/form-data" novalidate>
+                @Html.AntiForgeryToken()
+
+                <!-- Excel File -->
+                <div class="form-group">
+                    <label for="file">Excel File <span class="required">*</span></label>
+                    <div class="file-drop-zone" id="dropZone">
+                        <input type="file" name="file" id="file" accept=".xlsx,.xls"
+                               class="file-input" onchange="handleFileSelect(this)" />
+                        <div class="drop-content" id="dropContent">
+                            <span class="drop-icon">📊</span>
+                            <p>Drag & drop your Excel file here, or <strong>click to browse</strong></p>
+                            <p class="drop-hint">Supported formats: .xlsx, .xls</p>
+                        </div>
+                        <div class="file-selected" id="fileSelected" style="display:none;">
+                            <span class="file-icon">📄</span>
+                            <span id="fileName"></span>
+                            <button type="button" class="remove-file" onclick="removeFile()">✕</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Month & Year -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="month">Month <span class="required">*</span></label>
+                        <select name="month" id="month" class="form-input" required>
+                            <option value="">— Select Month —</option>
+                            @{
+                                var months = new[] {
+                                    "January","February","March","April","May","June",
+                                    "July","August","September","October","November","December"
+                                };
+                                for (int m = 1; m <= 12; m++)
+                                {
+                                    <option value="@m" selected="@(m == DateTime.Now.Month)">
+                                        @months[m - 1]
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">Year <span class="required">*</span></label>
+                        <input type="number" name="year" id="year" class="form-input"
+                               value="@DateTime.Now.Year"
+                               min="2000" max="2100" required />
+                    </div>
+                </div>
+
+                <!-- Release Date -->
+                <div class="form-group">
+                    <label for="releaseDate">Release Date <span class="required">*</span></label>
+                    <input type="datetime-local" name="releaseDate" id="releaseDate"
+                           class="form-input"
+                           value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")"
+                           required />
+                    <span class="hint">Employees can download their slip after this date and time.</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full" id="submitBtn">
+                    ⬆ Upload &amp; Process Payroll
+                </button>
+            </form>
+        </div>
+
+        <!-- Guidelines -->
+        <div class="side-panel">
+
+            <div class="card instructions-card">
+                <h3 class="card-title">📋 Excel Format Guide</h3>
+                <p class="instructions-intro">Your Excel file must have the following columns in the first sheet:</p>
+                <div class="column-list">
+                    <div class="column-item required-col">
+                        <span class="col-name">EmployeeCode</span>
+                        <span class="col-type">Text</span>
+                    </div>
+                    <div class="column-item required-col">
+                        <span class="col-name">BasicSalary</span>
+                        <span class="col-type">Number</span>
+                    </div>
+                    <div class="column-item required-col">
+                        <span class="col-name">TotalAllowances</span>
+                        <span class="col-type">Number</span>
+                    </div>
+                    <div class="column-item required-col">
+                        <span class="col-name">TotalDeductions</span>
+                        <span class="col-type">Number</span>
+                    </div>
+                    <div class="column-item required-col">
+                        <span class="col-name">NetSalary</span>
+                        <span class="col-type">Number</span>
+                    </div>
+                </div>
+                <div class="legend">
+                    <span class="legend-dot required-dot"></span> Required column
+                </div>
+            </div>
+
+            <div class="card tips-card">
+                <h3 class="card-title">💡 Tips</h3>
+                <ul class="tips-list">
+                    <li>The first row must be the header row.</li>
+                    <li>Employee codes must match existing employee records.</li>
+                    <li>Duplicate entries for the same month/year will be skipped.</li>
+                    <li>Set the release date in the future to schedule visibility.</li>
+                    <li>Ensure numbers have no currency symbols or commas.</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleFileSelect(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('dropContent').style.display = 'none';
+        document.getElementById('fileSelected').style.display = 'flex';
+        document.getElementById('fileName').textContent = file.name;
+    }
+
+    function removeFile() {
+        const input = document.getElementById('file');
+        input.value = '';
+        document.getElementById('dropContent').style.display = 'flex';
+        document.getElementById('fileSelected').style.display = 'none';
+        document.getElementById('fileName').textContent = '';
+    }
+
+    // Drag-and-drop
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const input = document.getElementById('file');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            handleFileSelect(input);
+        }
+    });
+
+    // Disable double-submit
+    document.querySelector('form').addEventListener('submit', function () {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Processing…';
+    });
+</script>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #f4f6fb;
+        color: #333;
+    }
+
+    .upload-wrapper {
+        max-width: 1050px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+    .subtitle {
+        color: #666;
+        font-size: 0.92rem;
+        margin-top: 0.3rem;
+    }
+
+    .alert {
+        border-radius: 8px;
+        padding: 0.9rem 1.2rem;
+        font-size: 0.9rem;
+        margin-bottom: 1.4rem;
+    }
+
+    .alert-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .alert-danger {
+        background: #fce4ec;
+        color: #c62828;
+    }
+
+    .error-list {
+        margin-top: 0.6rem;
+        padding-left: 1.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    @@media (max-width: 800px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.8rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 1.3rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f0f4ff;
+    }
+
+    /* Form */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin-bottom: 1.3rem;
+    }
+
+        .form-group label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #444;
+        }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    @@media (max-width: 500px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-input {
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #dde3f0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s;
+        width: 100%;
+    }
+
+        .form-input:focus {
+            border-color: #1a73e8;
+        }
+
+    .required {
+        color: #e53935;
+    }
+
+    .hint {
+        font-size: 0.78rem;
+        color: #888;
+        margin-top: 0.1rem;
+    }
+
+    /* File Drop Zone */
+    .file-drop-zone {
+        border: 2px dashed #c5cde8;
+        border-radius: 10px;
+        padding: 2rem 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        background: #fafbff;
+    }
+
+        .file-drop-zone:hover, .file-drop-zone.drag-over {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+
+    .file-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    .drop-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        pointer-events: none;
+    }
+
+    .drop-icon {
+        font-size: 2.5rem;
+    }
+
+    .drop-content p {
+        font-size: 0.9rem;
+        color: #555;
+    }
+
+    .drop-hint {
+        font-size: 0.78rem;
+        color: #aaa;
+    }
+
+    .file-selected {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .file-icon {
+        font-size: 1.5rem;
+    }
+
+    .remove-file {
+        pointer-events: all;
+        background: #fce4ec;
+        border: none;
+        color: #c62828;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+        position: relative;
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-block;
+        padding: 0.55rem 1.3rem;
+        border-radius: 7px;
+        font-size: 0.92rem;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: 0.2s;
+        font-weight: 500;
+    }
+
+    .btn-outline {
+        border: 2px solid #1a73e8;
+        color: #1a73e8;
+        background: transparent;
+    }
+
+        .btn-outline:hover {
+            background: #1a73e8;
+            color: white;
+        }
+
+    .btn-primary {
+        background: #1a73e8;
+        color: white;
+        font-weight: 600;
+    }
+
+        .btn-primary:hover {
+            background: #1558c0;
+        }
+
+        .btn-primary:disabled {
+            background: #90b4ef;
+            cursor: not-allowed;
+        }
+
+    .btn-full {
+        width: 100%;
+        text-align: center;
+        padding: 0.8rem;
+        font-size: 1rem;
+    }
+
+    /* Side Panel */
+    .side-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+
+    .column-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .column-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.88rem;
+    }
+
+    .required-col {
+        background: #f0f4ff;
+    }
+
+    .col-name {
+        font-weight: 600;
+        color: #333;
+        font-family: monospace;
+    }
+
+    .col-type {
+        color: #888;
+        font-size: 0.78rem;
+    }
+
+    .legend {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.78rem;
+        color: #666;
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .required-dot {
+        background: #1a73e8;
+    }
+
+    .instructions-intro {
+        font-size: 0.88rem;
+        color: #555;
+        margin-bottom: 1rem;
+    }
+
+    .tips-list {
+        padding-left: 1.3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        font-size: 0.88rem;
+        color: #555;
+        line-height: 1.5;
+    }
+</style>

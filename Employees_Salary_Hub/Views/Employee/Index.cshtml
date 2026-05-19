@@ -1,0 +1,286 @@
+﻿@model Employees_Salary_Hub.ViewModels.Employee.EmployeeDashboardViewModel
+@{
+    ViewData["Title"] = "My Dashboard";
+}
+
+<div class="dashboard-wrapper">
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <div class="welcome-text">
+            <h1>Welcome, @Model.Employee.FullName 👋</h1>
+            <p>@DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
+        </div>
+        <a asp-action="Profile" class="btn btn-outline">View Profile</a>
+    </div>
+
+    <!-- Latest Slip Summary -->
+    @if (Model.LatestSlip != null)
+    {
+        <div class="card-grid">
+            <div class="card card-green">
+                <span class="card-label">Net Salary</span>
+                <span class="card-value">₹@Model.LatestSlip.NetSalary.ToString("N2")</span>
+                <span class="card-sub">@Model.LatestSlip.Month / @Model.LatestSlip.Year</span>
+            </div>
+            <div class="card card-blue">
+                <span class="card-label">Basic Salary</span>
+                <span class="card-value">₹@Model.LatestSlip.BasicSalary.ToString("N2")</span>
+            </div>
+            <div class="card card-orange">
+                <span class="card-label">Total Deductions</span>
+                <span class="card-value">₹@Model.LatestSlip.TotalDeductions.ToString("N2")</span>
+            </div>
+            <div class="card card-purple">
+                <span class="card-label">Total Allowances</span>
+                <span class="card-value">₹@Model.LatestSlip.TotalAllowances.ToString("N2")</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert-info">No salary slip has been issued yet.</div>
+    }
+
+    <!-- Salary Slip History -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Salary Slip History</h2>
+        </div>
+
+        @if (Model.SalarySlips != null && Model.SalarySlips.Any())
+        {
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Month</th>
+                            <th>Year</th>
+                            <th>Basic Salary</th>
+                            <th>Allowances</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int i = 1;
+                        }
+                        @foreach (var slip in Model.SalarySlips)
+                        {
+                            <tr>
+                                <td>@i++</td>
+                                <td>@slip.Month</td>
+                                <td>@slip.Year</td>
+                                <td>₹@slip.BasicSalary.ToString("N2")</td>
+                                <td>₹@slip.TotalAllowances.ToString("N2")</td>
+                                <td>₹@slip.TotalDeductions.ToString("N2")</td>
+                                <td><strong>₹@slip.NetSalary.ToString("N2")</strong></td>
+                                <td>
+                                    <a asp-controller="SalarySlip" asp-action="Download"
+                                       asp-route-id="@slip.Id" class="btn btn-sm btn-primary">
+                                        Download
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="empty-state">No salary slips found.</p>
+        }
+    </div>
+
+</div>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #f4f6fb;
+        color: #333;
+    }
+
+    .dashboard-wrapper {
+        max-width: 1100px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .welcome-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #1a73e8, #0d47a1);
+        color: white;
+        border-radius: 12px;
+        padding: 1.8rem 2rem;
+        margin-bottom: 2rem;
+    }
+
+        .welcome-banner h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .welcome-banner p {
+            margin-top: 0.3rem;
+            opacity: 0.85;
+            font-size: 0.95rem;
+        }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .card {
+        border-radius: 10px;
+        padding: 1.4rem 1.6rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        color: white;
+    }
+
+    .card-label {
+        font-size: 0.82rem;
+        opacity: 0.85;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .card-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .card-sub {
+        font-size: 0.8rem;
+        opacity: 0.75;
+    }
+
+    .card-green {
+        background: linear-gradient(135deg, #2e7d32, #43a047);
+    }
+
+    .card-blue {
+        background: linear-gradient(135deg, #1565c0, #1e88e5);
+    }
+
+    .card-orange {
+        background: linear-gradient(135deg, #e65100, #fb8c00);
+    }
+
+    .card-purple {
+        background: linear-gradient(135deg, #6a1b9a, #ab47bc);
+    }
+
+    .section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.8rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.2rem;
+    }
+
+        .section-header h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+        .data-table th {
+            background: #f0f4ff;
+            color: #444;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 2px solid #dde3f0;
+        }
+
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .data-table tr:hover td {
+            background: #fafbff;
+        }
+
+    .btn {
+        display: inline-block;
+        padding: 0.5rem 1.2rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+    }
+
+    .btn-outline {
+        border: 2px solid white;
+        color: white;
+        background: transparent;
+    }
+
+        .btn-outline:hover {
+            background: white;
+            color: #1a73e8;
+        }
+
+    .btn-primary {
+        background: #1a73e8;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #1558c0;
+        }
+
+    .btn-sm {
+        padding: 0.35rem 0.85rem;
+        font-size: 0.82rem;
+    }
+
+    .alert-info {
+        background: #e3f2fd;
+        color: #1565c0;
+        border-radius: 8px;
+        padding: 1rem 1.4rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state {
+        color: #888;
+        font-size: 0.95rem;
+        padding: 1rem 0;
+    }
+</style>

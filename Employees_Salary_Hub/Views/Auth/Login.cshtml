@@ -1,0 +1,202 @@
+﻿@model Employees_Salary_Hub.ViewModels.Auth.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — Salary Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <style>
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+            :root {
+                --bg:        #0f1117;
+                --surface:   #1a1d27;
+                --border:    #2a2d3a;
+                --accent:    #4f8ef7;
+                --accent-glow: rgba(79,142,247,0.25);
+                --text:      #e8eaf0;
+                --muted:     #6b7280;
+                --error:     #f87171;
+            }
+
+            body {
+                font-family: 'DM Sans', sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                min-height: 100vh;
+                display: grid;
+                place-items: center;
+                background-image:
+                    radial-gradient(ellipse 60% 50% at 70% 20%, rgba(79,142,247,0.08) 0%, transparent 60%),
+                    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(79,142,247,0.05) 0%, transparent 60%);
+            }
+
+            .card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 20px;
+                padding: 48px 44px;
+                width: 100%;
+                max-width: 420px;
+                box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+                animation: fadeUp 0.5s ease both;
+            }
+
+            @@keyframes fadeUp {
+                from { opacity: 0; transform: translateY(20px); }
+                to   { opacity: 1; transform: translateY(0); }
+            }
+
+            .logo {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 32px;
+            }
+
+            .logo-icon {
+                width: 38px; height: 38px;
+                background: var(--accent);
+                border-radius: 10px;
+                display: grid;
+                place-items: center;
+                font-size: 18px;
+            }
+
+            .logo-text {
+                font-family: 'DM Serif Display', serif;
+                font-size: 20px;
+                color: var(--text);
+                line-height: 1;
+            }
+
+            .logo-text span { color: var(--accent); }
+
+            h1 {
+                font-size: 26px;
+                font-weight: 600;
+                margin-bottom: 6px;
+                font-family: 'DM Serif Display', serif;
+            }
+
+            .subtitle {
+                color: var(--muted);
+                font-size: 14px;
+                margin-bottom: 32px;
+            }
+
+            .field { margin-bottom: 20px; }
+
+            label {
+                display: block;
+                font-size: 13px;
+                font-weight: 500;
+                color: var(--muted);
+                margin-bottom: 8px;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+            }
+
+            input {
+                width: 100%;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 13px 16px;
+                color: var(--text);
+                font-family: 'DM Sans', sans-serif;
+                font-size: 15px;
+                transition: border-color 0.2s, box-shadow 0.2s;
+                outline: none;
+            }
+
+            input:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px var(--accent-glow);
+            }
+
+            .btn {
+                width: 100%;
+                background: var(--accent);
+                color: #fff;
+                border: none;
+                border-radius: 10px;
+                padding: 14px;
+                font-size: 15px;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                cursor: pointer;
+                margin-top: 8px;
+                transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+                box-shadow: 0 4px 20px var(--accent-glow);
+            }
+
+            .btn:hover  { opacity: 0.9; box-shadow: 0 6px 28px var(--accent-glow); }
+            .btn:active { transform: scale(0.98); }
+
+            .error-list {
+                background: rgba(248,113,113,0.08);
+                border: 1px solid rgba(248,113,113,0.3);
+                border-radius: 10px;
+                padding: 12px 16px;
+                margin-bottom: 20px;
+                font-size: 13px;
+                color: var(--error);
+            }
+
+            .field-error {
+                font-size: 12px;
+                color: var(--error);
+                margin-top: 5px;
+            }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">
+            <div class="logo-icon">💼</div>
+            <div class="logo-text">Salary<span>Hub</span></div>
+        </div>
+
+        <h1>Welcome back</h1>
+        <p class="subtitle">Sign in to access your salary portal</p>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="error-list">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <div>@error.ErrorMessage</div>
+                }
+            </div>
+        }
+
+        <form asp-action="Login" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="field">
+                <label asp-for="EmployeeCode">Employee Code</label>
+                <input asp-for="EmployeeCode" placeholder="e.g. EMP001" autocomplete="username" />
+                <div class="field-error">
+                    <span asp-validation-for="EmployeeCode"></span>
+                </div>
+            </div>
+
+            <div class="field">
+                <label asp-for="Password">Password</label>
+                <input asp-for="Password" type="password" placeholder="••••••••" autocomplete="current-password" />
+                <div class="field-error">
+                    <span asp-validation-for="Password"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn">Sign In →</button>
+        </form>
+    </div>
+</body>
+</html>

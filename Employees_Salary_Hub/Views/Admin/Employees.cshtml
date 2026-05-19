@@ -1,0 +1,370 @@
+﻿@model IEnumerable<ApplicationUser>
+@{
+    ViewData["Title"] = "Manage Employees";
+}
+
+<div class="emp-wrapper">
+
+    <div class="page-header">
+        <div>
+            <h1>Employees</h1>
+            <p class="subtitle">@Model.Count() employee(s) registered in the system.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline">← Dashboard</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">✅ @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">⚠️ @TempData["Error"]</div>
+    }
+
+    <!-- Search Filter -->
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍  Search by name, email or employee code…"
+               class="search-input" onkeyup="filterTable()" />
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="empTable">
+                    <thead>
+                        <tr>
+                            <th>Employee Code</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Designation</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var emp in Model)
+                        {
+                            <tr>
+                                <td><code class="code-tag">@emp.EmployeeCode</code></td>
+                                <td>
+                                    <div class="emp-name">
+                                        <div class="avatar-sm">
+                                            @string.Concat((emp.FullName ?? "?").Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0]))
+                                        </div>
+                                        @emp.FullName
+                                    </div>
+                                </td>
+                                <td class="text-muted">@emp.Email</td>
+                                <td>@(emp.Department ?? "—")</td>
+                                <td>@(emp.Designation ?? "—")</td>
+                                <td>
+                                    @if (emp.IsActive)
+                                    {
+                                        <span class="badge badge-green">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-red">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="action-group">
+                                        <!-- Toggle Active -->
+                                        <form asp-action="ToggleActive" asp-route-id="@emp.Id"
+                                              method="post" style="display:inline"
+                                              onsubmit="return confirm('@(emp.IsActive ? "Deactivate" : "Activate") @emp.FullName?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="btn btn-sm @(emp.IsActive ? "btn-warning" : "btn-success")">
+                                                @(emp.IsActive ? "Deactivate" : "Activate")
+                                            </button>
+                                        </form>
+
+                                        <!-- Reset Password -->
+                                        <form asp-action="ResetPassword" asp-route-id="@emp.Id"
+                                              method="post" style="display:inline"
+                                              onsubmit="return confirm('Reset password for @emp.FullName? They will be prompted to set a new one.')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                Reset Pwd
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <h3>No Employees Found</h3>
+            <p>Employees will appear here once they are registered in the system.</p>
+        </div>
+    }
+</div>
+
+<script>
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#empTable tbody tr');
+        rows.forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+        });
+    }
+</script>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #f4f6fb;
+        color: #333;
+    }
+
+    .emp-wrapper {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.8rem;
+    }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+    .subtitle {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.3rem;
+    }
+
+    .alert {
+        border-radius: 8px;
+        padding: 0.85rem 1.2rem;
+        font-size: 0.9rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .alert-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .alert-danger {
+        background: #fce4ec;
+        color: #c62828;
+    }
+
+    .search-bar {
+        margin-bottom: 1.2rem;
+    }
+
+    .search-input {
+        width: 100%;
+        max-width: 420px;
+        padding: 0.65rem 1rem;
+        border: 1.5px solid #dde3f0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        outline: none;
+    }
+
+        .search-input:focus {
+            border-color: #1a73e8;
+        }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.6rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+
+        .data-table th {
+            background: #f0f4ff;
+            padding: 0.7rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #dde3f0;
+        }
+
+        .data-table td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: #fafbff;
+        }
+
+    .emp-name {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1a73e8, #0d47a1);
+        color: white;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .code-tag {
+        background: #f0f4ff;
+        color: #1a73e8;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.82rem;
+    }
+
+    .text-muted {
+        color: #888;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.22rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-green {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .badge-red {
+        background: #fce4ec;
+        color: #c62828;
+    }
+
+    .action-group {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 0.5rem 1.1rem;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: 0.2s;
+        font-weight: 500;
+    }
+
+    .btn-outline {
+        border: 2px solid #1a73e8;
+        color: #1a73e8;
+        background: transparent;
+    }
+
+        .btn-outline:hover {
+            background: #1a73e8;
+            color: white;
+        }
+
+    .btn-sm {
+        padding: 0.35rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .btn-success {
+        background: #43a047;
+        color: white;
+    }
+
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+
+    .btn-warning {
+        background: #fb8c00;
+        color: white;
+    }
+
+        .btn-warning:hover {
+            background: #e65100;
+        }
+
+    .btn-danger {
+        background: #e53935;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+
+    .empty-state {
+        background: white;
+        border-radius: 14px;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #666;
+        font-size: 0.9rem;
+    }
+</style>
