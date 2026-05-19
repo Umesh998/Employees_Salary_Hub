@@ -1,0 +1,49 @@
+﻿## ASP.NET Core
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Sensitive config files — never push these
+appsettings.json
+appsettings.*.json
+secrets.json
+
+## Published output
+publish/
+out/
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Logs
+*.log
+logs/
+
+## OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## Visual Studio Code
+.vscode/
+
+## Entity Framework migrations — keep these, do NOT ignore
+# Migrations/
+
+## Node (if any frontend tooling)
+node_modules/
+npm-debug.log
+yarn-error.log
